@@ -1,0 +1,29 @@
+import { Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import Home from "@/pages/Home";
+import VehicleDetail from "@/pages/VehicleDetail";
+import BuildDeal from "@/pages/BuildDeal";
+import Negotiate from "@/pages/Negotiate";
+import Garage from "@/pages/Garage";
+import DealerDashboard from "@/pages/DealerDashboard";
+import DealerDeal from "@/pages/DealerDeal";
+import DealerSettings from "@/pages/DealerSettings";
+
+// One <Route> per page in src/pages; BrowserRouter already wraps this in main.jsx.
+export default function App() {
+  return (
+    <>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/vehicle/:vehicleId" element={<VehicleDetail />} />
+        <Route path="/deal/:dealId" element={<BuildDeal />} />
+        <Route path="/negotiate/:dealId" element={<Negotiate />} />
+        <Route path="/garage" element={<Garage />} />
+        <Route path="/dealer" element={<DealerDashboard />} />
+        <Route path="/dealer/deals/:dealId" element={<DealerDeal />} />
+        <Route path="/dealer/settings" element={<DealerSettings />} />
+      </Routes>
+      <Toaster position="bottom-right" richColors />
+    </>
+  );
+}

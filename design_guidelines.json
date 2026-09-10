@@ -1,0 +1,187 @@
+{
+  "app_name": "DealDrive",
+  "theme_strategy": "Precision Performance Dark & Slate High-Contrast (Modern Automotive Tech with Tactical Minimalism)",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#0B0F17",
+        "on_bg": "#F1F5F9",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "card",
+        "kind": "solid",
+        "bg": "#111827",
+        "on_bg": "#F9FAFB",
+        "on_bg_muted": "#9CA3AF"
+      },
+      {
+        "name": "card_subtle",
+        "kind": "solid",
+        "bg": "#1E293B",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "panel_elevated",
+        "kind": "solid",
+        "bg": "#161F30",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "hero",
+        "kind": "image",
+        "contrast_against": "#080C14",
+        "guarantee": "scrim: linear-gradient(to bottom, rgba(11,15,23,0.88), rgba(11,15,23,0.96))",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "accent": "#FF5722",
+          "link": "#38BDF8",
+          "success": "#10B981",
+          "error": "#EF4444"
+        }
+      },
+      {
+        "name": "deal_breakdown_surface",
+        "kind": "solid",
+        "bg": "#0D1524",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#A0AEC0"
+      },
+      {
+        "name": "negotiation_thread_surface",
+        "kind": "solid",
+        "bg": "#0F172A",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8"
+      },
+      {
+        "name": "tag_pill_accent",
+        "kind": "solid",
+        "bg": "#2A1810",
+        "on_bg": "#FF8A65",
+        "on_bg_muted": "#FF7043"
+      },
+      {
+        "name": "tag_pill_match",
+        "kind": "solid",
+        "bg": "#064E3B",
+        "on_bg": "#34D399",
+        "on_bg_muted": "#6EE7B7"
+      }
+    ],
+    "accent": "#FF5722",
+    "on_accent": "#FFFFFF",
+    "secondary_accent": "#38BDF8",
+    "on_secondary_accent": "#031525",
+    "border_color": "#233044",
+    "border_highlight": "#374151"
+  },
+  "typography": {
+    "font_heading": "'Sora Variable', sans-serif",
+    "font_body": "'DM Sans Variable', sans-serif",
+    "font_mono": "'JetBrains Mono Variable', monospace",
+    "import_statements": [
+      "@import '@fontsource-variable/sora';",
+      "@import '@fontsource-variable/dm-sans';",
+      "@import '@fontsource-variable/jetbrains-mono';"
+    ],
+    "scale_px": {
+      "display": 56,
+      "h1": 44,
+      "h2": 32,
+      "h3": 24,
+      "h4": 20,
+      "body": 16,
+      "caption": 14
+    }
+  },
+  "entry_surfaces": {
+    "/": "split & asymmetric bento hero — NL vehicle query search prompt and prompt pill tags on top, sample matching trucks grid with live match scoring and Build Deal action below",
+    "/deal/:vehicleId": "split desking view — vehicle specifications & photo showcase left, dynamic deal structure calculator and trade module right",
+    "/negotiate/:dealId": "two-column interactive negotiation command center — live deal transcript with AI simulated dealer responses left, sticky action deck (counter, accept, decline) right",
+    "/garage": "bento vehicle asset deck — equity and valuation tracker top, maintenance/mileage update card and 'Shop with this Trade' action bottom",
+    "/dealer": "high-density desking cockpit — incoming deal queue with status badges, live dealer controls, and fast take-over trigger",
+    "/dealer/settings": "rules matrix panel — dealership-wide discount authority, floor limits, and per-VIN override table"
+  },
+  "layouts": {
+    "container_max_width": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+    "header_height": "h-16",
+    "bento_gap": "gap-6",
+    "spacing_philosophy": "Generous tactical spacing with strict 1px high-contrast borders (#233044) and subtle rounded corners (rounded-xl)"
+  },
+  "visual_enhancers": {
+    "tactical_badges": "High contrast status indicators with subtle border glows (e.g., '96% Match', 'AI Negotiating', 'Dealer Counter')",
+    "dynamic_otd_summary": "Sticky bottom bar on mobile or sticky sidebar on desktop showing real-time recalculated Out-The-Door (OTD) pricing",
+    "ai_negotiation_ticker": "Simulated typing indicator with realistic latency and conversational dealer counteroffers with dealer rule engine behind the scenes"
+  },
+  "media": {
+    "image_urls": [
+      {
+        "category": "hero_gmc_truck",
+        "description": "Black GMC Sierra 1500 Denali Pickup Truck",
+        "url": "https://images.unsplash.com/photo-1601252300554-4ad551483bd2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwyfHxtb2Rlcm4lMjBwaWNrdXAlMjB0cnVja3xlbnwwfHx8fDE3ODg5OTkxODJ8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "ram_truck",
+        "description": "Silver RAM 1500 Limited Pickup Truck",
+        "url": "https://images.unsplash.com/photo-1649793395985-967862a3b73f?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBwaWNrdXAlMjB0cnVja3xlbnwwfHx8fDE3ODg5OTkxODJ8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "ford_truck",
+        "description": "Red Ford F-150 Lariat Pickup Truck",
+        "url": "https://images.unsplash.com/photo-1624339024061-b435d9261c1d?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHw0fHxtb2Rlcm4lMjBwaWNrdXAlMjB0cnVja3xlbnwwfHx8fDE3ODg5OTkxODJ8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "toyota_truck",
+        "description": "Brown Toyota Tundra 1794 Edition Pickup Truck",
+        "url": "https://images.unsplash.com/photo-1605504835488-e8c6d37beb43?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzV8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBwaWNrdXAlMjB0cnVja3xlbnwwfHx8fDE3ODg5OTkxODJ8MA&ixlib=rb-4.1.0&q=85"
+      },
+      {
+        "category": "interior_luxury",
+        "description": "Modern automotive cockpit dashboard and digital display",
+        "url": "https://images.unsplash.com/photo-1661336878257-1c51b5af959a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMjh8MHwxfHNlYXJjaHw0fHxsdXh1cnklMjBjYXIlMjBkYXNoYm9hcmQlMjBkZWFsZXJzaGlwfGVufDB8fHx8MTc4ODk5OTE4Mnww&ixlib=rb-4.1.0&q=85"
+      }
+    ]
+  },
+  "motion": {
+    "hover_transition": "transition-transform duration-200 ease-out hover:-translate-y-1",
+    "card_border_glow": "hover:border-orange-500/50 hover:shadow-lg hover:shadow-orange-500/5",
+    "message_bubble_in": "animate-in fade-in slide-in-from-bottom-2 duration-300"
+  },
+  "accessibility": {
+    "contrast_standard": "WCAG AA (APCA compliant)",
+    "min_contrast_ratio": "4.5:1 for body copy against all surfaces, 3:1 for large headers",
+    "interactive_targets": "Minimum 44px by 44px clickable areas for buttons and toggles",
+    "data_testids": "Strict kebab-case role-based identifiers on every actionable and status node"
+  },
+  "instructions_to_main_agent": [
+    "1. Role Switcher: Implement a global header switcher (toggle/pills) to flip between 'Consumer Experience' and 'Dealer Experience' anytime with active badge.",
+    "2. Natural Language Vehicle Search: Provide the search box with preset prompts ('GMC Denali 1500', 'Ford F-150 hybrid under 50k', 'Toyota Tundra crew cab'). When 'GMC Denali 1500' is submitted, explicitly highlight 'Interpreted as GMC Sierra 1500 Denali (98% match)'.",
+    "3. Four Matching Trucks: Render GMC Sierra 1500 Denali, Ford F-150 Lariat, Ram 1500 Limited, and Toyota Tundra 1794 with Match %, Selling Price, Mileage, Distance, Key Features tags, and 'Build Deal' CTA button.",
+    "4. Build Deal flow: Real-time math breakdown showing Selling Price, Manufacturer Incentives (-$3,250), Dealer Doc Fee ($699), Estimated Tax/Title (e.g. 7.5%), and OTD Total. Allow down payment adjustment.",
+    "5. Add Trade-in Module: VIN input (with auto-populate button or sample VINs), Year/Make/Model, Mileage, Estimated Payoff, Condition selector (Excellent, Clean, Fair), photo upload placeholders, dynamic trade valuation estimate ($32,000 - $35,500), and auto-calculated positive or negative equity applied directly to the deal.",
+    "6. AI Negotiation Simulation: Customer enters offer price. Trigger dynamic AI negotiation responses based on dealer rules. Dealer rules include Advertised Price, AI Discount Authority, Manager Approval threshold, and Hard Floor. Provide simulated dealer counteroffer messages with 'Accept Deal', 'Counter Again', and 'Decline Deal' options.",
+    "7. Deal Accepted + Appointment Booking: Once deal is accepted, show confirmation celebration state, summary deal sheet, and interactive test drive/delivery appointment scheduler (calendar date, time slots, dealer address).",
+    "8. My Garage: Add purchased or trade vehicle to 'My Garage' showing Current Market Value, Loan Payoff, Net Equity gauge, 'Update Mileage' modal, 'Refresh Value' calculation, and 'Shop With This Trade' button jumping into search with pre-loaded equity.",
+    "9. Dealer Portal: Dashboard with incoming customer deals, Deal status badges (Pending AI, Customer Countered, Manager Review, Accepted, Closed), Deal Detail view with customer offer, trade valuation, profit breakdown, and action buttons: 'Accept', 'Counter', 'Decline', 'Take Over (Direct Desking)'.",
+    "10. Dealer Negotiation Settings: Dealer Settings page with sliders and inputs for Default AI Discount Authority ($), Manager Threshold ($), Hard Floor ($), Max Deviation (%), plus a per-VIN/Vehicle override table allowing custom rules on high-demand trucks.",
+    "11. All interactive elements MUST have explicit data-testid attributes (e.g. data-testid='nl-search-input', data-testid='build-deal-btn-1', data-testid='submit-offer-btn', data-testid='accept-deal-btn', data-testid='role-switcher-dealer')."
+  ],
+  "component_paths": {
+    "header": "/app/frontend/src/components/Navbar.jsx",
+    "search_hero": "/app/frontend/src/components/SearchHero.jsx",
+    "vehicle_card": "/app/frontend/src/components/VehicleCard.jsx",
+    "deal_builder": "/app/frontend/src/components/DealBuilder.jsx",
+    "trade_in_modal": "/app/frontend/src/components/TradeInModal.jsx",
+    "negotiation_chat": "/app/frontend/src/components/NegotiationChat.jsx",
+    "appointment_scheduler": "/app/frontend/src/components/AppointmentScheduler.jsx",
+    "garage_view": "/app/frontend/src/pages/Garage.jsx",
+    "dealer_dashboard": "/app/frontend/src/pages/DealerDashboard.jsx",
+    "dealer_settings": "/app/frontend/src/pages/DealerSettings.jsx"
+  }
+}
