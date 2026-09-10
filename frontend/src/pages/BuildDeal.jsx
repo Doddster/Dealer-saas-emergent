@@ -5,11 +5,13 @@ import { ArrowLeft, ImagePlus, Wand2 } from "lucide-react";
 import { toast } from "sonner";
 import { Shell } from "@/components/Navbar";
 import DealSummary from "@/components/DealSummary";
+import PaymentEstimator from "@/components/PaymentEstimator";
+import OfferCoach from "@/components/OfferCoach";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { apiGet, apiPost, apiPut } from "@/lib/api";
+import { apiGet, apiPatch, apiPost, apiPut } from "@/lib/api";
 import { money, num } from "@/lib/format";
 
 const CONDITIONS = { excellent: "Excellent", clean: "Clean", fair: "Fair" };
@@ -34,6 +36,7 @@ export default function BuildDeal() {
   const [trade, setTrade] = useState(EMPTY_TRADE);
   const [down, setDown] = useState("2000");
   const [offer, setOffer] = useState("");
+  const [coach, setCoach] = useState(null);
 
   const { data: deal, isError } = useQuery({
     queryKey: ["deal", dealId],
@@ -57,6 +60,17 @@ export default function BuildDeal() {
       toast.success("Trade added — your deal has been recalculated.");
     },
     onError: () => toast.error("Please complete year, make, model and mileage."),
+  });
+
+  const checkOffer = useMutation({
+    mutationFn: () => apiPost(`/deals/${dealId}/coach`, { amount: Number(offer) }),
+    onSuccess: (data) => setCoach(data),
+    onError: () => toast.error("Could not check that offer."),
+  });
+
+  const saveTerms = useMutation({
+    mutationFn: (amount) => apiPatch(`/deals/${dealId}/terms`, { down_payment: Number(amount || 0) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["deal", dealId] }),
   });
 
   const submitOffer = useMutation({
@@ -118,6 +132,25 @@ export default function BuildDeal() {
                     {money(t.estimated_low)} – {money(t.estimated_high)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">Estimated trade range (sample valuation, no KBB/J.D. Power connected)</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
+                    <div>
+                      <span className="block text-xs text-slate-500">Estimated Value</span>
+                      <span className="dd-num text-slate-100" data-testid="trade-estimated-value">{money(t.estimated_value)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-slate-500">Estimated Payoff</span>
+                      <span className="dd-num text-slate-100" data-testid="trade-payoff-value">{money(t.payoff)}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs text-slate-500">Equity</span>
+                      <span
+                        className={`dd-num ${deal.breakdown.trade_equity >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                        data-testid="trade-equity-value"
+                      >
+                        {money(deal.breakdown.trade_equity)}
+                      </span>
+                    </div>
+                  </div>
                   <p
                     className={`dd-num mt-3 text-sm font-medium ${deal.breakdown.trade_equity >= 0 ? "text-emerald-400" : "text-red-400"}`}
                     data-testid="trade-equity-callout"
@@ -216,7 +249,13 @@ export default function BuildDeal() {
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
                   <Label className="mb-1.5 block text-xs">Down Payment</Label>
-                  <Input data-testid="down-payment-input" value={down} onChange={(e) => setDown(e.target.value)} />
+                  <Input
+                    data-testid="down-payment-input"
+                    value={down}
+                    onChange={(e) => setDown(e.target.value)}
+                    onBlur={() => saveTerms.mutate(down)}
+                  />
+                  <p className="mt-1 text-xs text-slate-500">Totals recalculate when you leave this field.</p>
                 </div>
                 <div>
                   <Label className="mb-1.5 block text-xs">Your Offer (selling price)</Label>
@@ -224,24 +263,41 @@ export default function BuildDeal() {
                     data-testid="offer-amount-input"
                     placeholder={String(Math.round(v.price - 3000))}
                     value={offer}
-                    onChange={(e) => setOffer(e.target.value)}
+                    onChange={(e) => {
+                      setOffer(e.target.value);
+                      setCoach(null);
+                    }}
                   />
                 </div>
               </div>
-              <Button
-                size="lg"
-                className="mt-5 w-full sm:w-auto"
-                data-testid="submit-offer-btn"
-                disabled={!offer || submitOffer.isPending}
-                onClick={() => submitOffer.mutate()}
-              >
-                Submit Offer &amp; Start Negotiation
-              </Button>
+
+              <OfferCoach coach={coach} isPending={checkOffer.isPending} />
+
+              <div className="mt-5 flex flex-wrap gap-3">
+                <Button
+                  size="lg"
+                  variant="outline"
+                  data-testid="check-offer-btn"
+                  disabled={!offer || checkOffer.isPending}
+                  onClick={() => checkOffer.mutate()}
+                >
+                  Check My Offer First
+                </Button>
+                <Button
+                  size="lg"
+                  data-testid="submit-offer-btn"
+                  disabled={!offer || submitOffer.isPending}
+                  onClick={() => submitOffer.mutate()}
+                >
+                  Submit Offer &amp; Start Negotiation
+                </Button>
+              </div>
             </section>
           </div>
 
-          <aside className="h-fit lg:sticky lg:top-24">
+          <aside className="h-fit space-y-6 lg:sticky lg:top-24">
             <DealSummary breakdown={deal.breakdown} />
+            <PaymentEstimator amountDue={deal.breakdown.amount_due} />
           </aside>
         </div>
       )}

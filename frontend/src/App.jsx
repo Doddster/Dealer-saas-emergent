@@ -5,6 +5,7 @@ import VehicleDetail from "@/pages/VehicleDetail";
 import BuildDeal from "@/pages/BuildDeal";
 import Negotiate from "@/pages/Negotiate";
 import Garage from "@/pages/Garage";
+import Compare from "@/pages/Compare";
 import DealerDashboard from "@/pages/DealerDashboard";
 import DealerDeal from "@/pages/DealerDeal";
 import DealerSettings from "@/pages/DealerSettings";
@@ -19,6 +20,7 @@ export default function App() {
         <Route path="/deal/:dealId" element={<BuildDeal />} />
         <Route path="/negotiate/:dealId" element={<Negotiate />} />
         <Route path="/garage" element={<Garage />} />
+        <Route path="/compare" element={<Compare />} />
         <Route path="/dealer" element={<DealerDashboard />} />
         <Route path="/dealer/deals/:dealId" element={<DealerDeal />} />
         <Route path="/dealer/settings" element={<DealerSettings />} />

@@ -33,6 +33,8 @@ INDEXES: dict[str, list[IndexModel]] = {
         IndexModel([("id", ASCENDING)], name="id", unique=True),
         IndexModel([("added_at", DESCENDING)], name="added_desc"),
     ],
+    # _id is the lowercased query string, so it is already uniquely indexed by Mongo.
+    "search_interpretations": [IndexModel([("source", ASCENDING)], name="source")],
 }
 
 

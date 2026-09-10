@@ -16,9 +16,11 @@ export default function DealerDeal() {
   const qc = useQueryClient();
   const [counter, setCounter] = useState("");
 
+  // Poll so the desk sees a customer counter without a manual refresh.
   const { data: deal, isError } = useQuery({
     queryKey: ["deal", dealId],
     queryFn: () => apiGet(`/deals/${dealId}`),
+    refetchInterval: 5000,
   });
 
   const { data: rules } = useQuery({
@@ -74,7 +76,11 @@ export default function DealerDeal() {
                   {deal.latest_offer ? money(deal.latest_offer) : "—"}
                 </p>
                 <p className="dd-num mt-1 text-xs text-slate-500">
-                  Current counter: {deal.latest_counter ? money(deal.latest_counter) : "—"}
+                  Advertised {money(deal.vehicle.price)} · Current counter:{" "}
+                  {deal.latest_counter ? money(deal.latest_counter) : "—"}
+                </p>
+                <p className="dd-num mt-1 text-xs text-slate-500" data-testid="dealer-down-payment">
+                  Down payment {money(deal.down_payment)}
                 </p>
               </div>
               <div className="rounded-xl border border-[#233044] bg-[#111827] p-5">
@@ -86,6 +92,12 @@ export default function DealerDeal() {
                     </p>
                     <p className="dd-num mt-1 text-sm text-slate-400">
                       ACV {money(t.estimated_value)} · Payoff {money(t.payoff)}
+                    </p>
+                    <p
+                      className={`dd-num mt-1 text-sm ${deal.breakdown.trade_equity >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                      data-testid="dealer-trade-equity"
+                    >
+                      Equity {money(deal.breakdown.trade_equity)}
                     </p>
                   </div>
                 ) : (

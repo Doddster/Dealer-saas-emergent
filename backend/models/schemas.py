@@ -38,6 +38,10 @@ class SearchResponse(BaseModel):
     query: str
     interpreted_as: str
     interpretation_note: str
+    model_search: bool = False
+    has_exact: bool = True
+    exact_matches: list[VehicleMatch] = []
+    alternatives: list[VehicleMatch] = []
     results: list[VehicleMatch]
 
 
@@ -109,6 +113,10 @@ class OfferInput(BaseModel):
     down_payment: float = 0.0
 
 
+class TermsInput(BaseModel):
+    down_payment: float = 0.0
+
+
 class DealerActionInput(BaseModel):
     action: Literal["accept", "counter", "decline", "takeover"]
     amount: Optional[float] = None
@@ -119,6 +127,21 @@ class AppointmentInput(BaseModel):
     date: str
     time: str
     type: str = "Test Drive & Delivery"
+
+
+class CoachInput(BaseModel):
+    amount: float
+
+
+class CoachResponse(BaseModel):
+    band: Literal["strong", "possible", "unlikely"]
+    hint: str
+    amount: float
+
+
+class Quote(BaseModel):
+    vehicle: Vehicle
+    breakdown: dict[str, Any]
 
 
 class DealerRules(BaseModel):
@@ -158,6 +181,8 @@ class GarageVehicle(BaseModel):
     payoff: float = 0.0
     estimated_value: float
     equity: float
+    base_value: float = 0.0
+    base_mileage: int = 0
     source: str = "purchase"
     added_at: datetime
 

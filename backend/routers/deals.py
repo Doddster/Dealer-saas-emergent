@@ -1,14 +1,18 @@
 from fastapi import APIRouter, HTTPException
 
 from lib.db import db
-from lib.pricing import compute_deal, effective_rules, negotiate, now_utc, round2, trade_estimate
+from lib.llm import coach_hint, negotiation_message
+from lib.pricing import coach_band, compute_deal, effective_rules, negotiate, now_utc, round2, trade_estimate
 from models.schemas import (
     AppointmentInput,
+    CoachInput,
+    CoachResponse,
     Deal,
     DealCreate,
     DealerActionInput,
     Message,
     OfferInput,
+    TermsInput,
     Trade,
     TradeInput,
 )
@@ -101,8 +105,31 @@ async def submit_offer(deal_id: str, payload: OfferInput):
         deal["messages"].append(_msg("system", "A product specialist has taken over this conversation and will respond shortly."))
         return await _save(deal)
 
+    # The rules engine is authoritative for the decision AND the price, so the hard floor can
+    # never be breached. ChatGPT only rephrases that outcome conversationally; on any failure
+    # we keep the deterministic canned text.
     rules = await _rules_for(deal["vehicle"])
     decision, price, text, status = negotiate(float(payload.amount), rules)
+
+    if decision == "escalated":
+        # Manager zone: no AI counter. The complete deal lands on the Dealer Desk.
+        deal["status"] = status
+        deal["latest_counter"] = None
+        deal["messages"].append(_msg("dealer", text, None))
+        deal["messages"].append(_msg("system", "Sent to the sales manager for review."))
+        deal["breakdown"] = compute_deal(deal["vehicle"], deal["selling_price"], deal.get("trade"), deal["down_payment"])
+        return await _save(deal)
+
+    ai_text = await negotiation_message(
+        decision=decision,
+        required_price=price,
+        vehicle=deal["vehicle"],
+        offer=float(payload.amount),
+        trade=deal.get("trade"),
+        history=deal["messages"],
+    )
+    if ai_text and f"{price:,.0f}" in ai_text:
+        text = ai_text
     deal["messages"].append(_msg("dealer", text, price))
     deal["status"] = status
     if decision == "accepted":
@@ -113,6 +140,35 @@ async def submit_offer(deal_id: str, payload: OfferInput):
         deal["latest_counter"] = price
     deal["breakdown"] = compute_deal(deal["vehicle"], deal.get("agreed_price") or deal["selling_price"], deal.get("trade"), deal["down_payment"])
     return await _save(deal)
+
+
+@router.patch("/{deal_id}/terms", response_model=Deal)
+async def update_terms(deal_id: str, payload: TermsInput):
+    """Down-payment change -> server recalculates the whole breakdown."""
+    deal = await _load(deal_id)
+    deal["down_payment"] = round2(payload.down_payment)
+    deal["breakdown"] = compute_deal(
+        deal["vehicle"],
+        deal.get("agreed_price") or deal["selling_price"],
+        deal.get("trade"),
+        deal["down_payment"],
+    )
+    return await _save(deal)
+
+
+@router.post("/{deal_id}/coach", response_model=CoachResponse)
+async def coach_offer(deal_id: str, payload: CoachInput):
+    """Private pre-submit hint for the customer. Never returns dealer rule values."""
+    deal = await _load(deal_id)
+    rules = await _rules_for(deal["vehicle"])
+    band, canned = coach_band(float(payload.amount), rules)
+    ai = await coach_hint(
+        band=band,
+        offer=float(payload.amount),
+        vehicle=deal["vehicle"],
+        trade=deal.get("trade"),
+    )
+    return CoachResponse(band=band, hint=ai or canned, amount=round2(payload.amount))
 
 
 @router.post("/{deal_id}/accept-counter", response_model=Deal)
@@ -165,6 +221,8 @@ async def book_appointment(deal_id: str, payload: AppointmentInput):
                 "payoff": round2(max(0.0, b["amount_due"])),
                 "estimated_value": round2(b["selling_price"] * 0.97),
                 "equity": round2(b["selling_price"] * 0.97 - max(0.0, b["amount_due"])),
+                "base_value": round2(b["selling_price"] * 0.97),
+                "base_mileage": v["mileage"],
                 "source": "purchase",
                 "added_at": now_utc(),
             }

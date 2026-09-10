@@ -17,7 +17,7 @@ VEHICLES = [
         "make": "GMC",
         "model": "Sierra 1500",
         "trim": "Denali",
-        "price": 68450.0,
+        "price": 68995.0,
         "msrp": 72900.0,
         "incentives": 3250.0,
         "mileage": 12840,
@@ -102,13 +102,16 @@ RULES = {
 }
 
 OVERRIDES = [
+    # Demo rules for the Sierra: advertised 68,995 / AI authority 1,000 below advertised /
+    # manager review zone between the AI authority and the hard floor / hard floor 65,500 /
+    # max customer offer deviation 8%.
     {
         "vin": "3GTUUGED5PG100411",
         "label": "2024 GMC Sierra 1500 Denali (high demand)",
-        "ai_discount_authority": 1500.0,
-        "manager_threshold": 3000.0,
-        "hard_floor": 64500.0,
-        "max_deviation_pct": 10.0,
+        "ai_discount_authority": 1000.0,
+        "manager_threshold": 3495.0,  # 68,995 - 65,500 -> everything above the floor escalates
+        "hard_floor": 65500.0,
+        "max_deviation_pct": 8.0,
     }
 ]
 
@@ -145,6 +148,8 @@ async def main():
         doc = dict(g)
         doc["estimated_value"] = est["value"]
         doc["equity"] = round2(est["value"] - g["payoff"])
+        doc["base_value"] = est["value"]
+        doc["base_mileage"] = g["mileage"]
         doc["added_at"] = datetime.now(timezone.utc)
         await db.garage.insert_one(doc)
 

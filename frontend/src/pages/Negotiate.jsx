@@ -5,6 +5,7 @@ import { ArrowLeft, CalendarCheck, CheckCircle2, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import { Shell } from "@/components/Navbar";
 import DealSummary from "@/components/DealSummary";
+import PaymentEstimator from "@/components/PaymentEstimator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,9 +27,11 @@ export default function Negotiate() {
   const [date, setDate] = useState(tomorrowIso());
   const [time, setTime] = useState(TIMES[1]);
 
+  // Poll so a dealer counter appears here without a manual refresh.
   const { data: deal, isError } = useQuery({
     queryKey: ["deal", dealId],
     queryFn: () => apiGet(`/deals/${dealId}`),
+    refetchInterval: 5000,
   });
 
   const invalidate = () => {
@@ -97,6 +100,19 @@ export default function Negotiate() {
                 </div>
               ))}
             </div>
+
+            {status === "manager_review" && (
+              <div
+                className="dd-rise mt-6 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-5"
+                data-testid="manager-review-notice"
+              >
+                <h2 className="font-heading text-base font-semibold text-amber-200">With the sales manager</h2>
+                <p className="mt-1 text-sm text-amber-100/90">
+                  Your offer is being reviewed by a manager at {deal.vehicle.dealer_name}. Their response will
+                  appear here automatically — you don&apos;t need to refresh.
+                </p>
+              </div>
+            )}
 
             {status === "declined" && (
               <p className="mt-5 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300" data-testid="deal-declined-notice">
@@ -198,6 +214,12 @@ export default function Negotiate() {
                 <Button className="mt-5" data-testid="book-appointment-btn" disabled={book.isPending} onClick={() => book.mutate()}>
                   <CalendarCheck className="size-4" /> Confirm Appointment
                 </Button>
+
+                <p className="mt-4 text-xs text-emerald-100/70" data-testid="deal-accepted-disclaimer">
+                  Final price, incentives, trade appraisal, financing, taxes, fees, and vehicle availability
+                  are estimates and require dealer verification. This is a prototype — nothing here is a
+                  binding offer or contract.
+                </p>
               </div>
             )}
 
@@ -210,6 +232,10 @@ export default function Negotiate() {
                 <p className="mt-2 text-sm text-slate-300">
                   Your specialist at {deal.vehicle.dealer_name} will take it from here.
                 </p>
+                <p className="mt-3 text-xs text-slate-400" data-testid="closed-disclaimer">
+                  Final price, incentives, trade appraisal, financing, taxes, fees, and vehicle availability
+                  require dealer verification.
+                </p>
                 <Link to="/garage" className="mt-4 inline-block" data-testid="go-to-garage-link">
                   <Button variant="outline">View in My Garage</Button>
                 </Link>
@@ -217,8 +243,9 @@ export default function Negotiate() {
             )}
           </div>
 
-          <aside className="h-fit lg:sticky lg:top-24">
+          <aside className="h-fit space-y-6 lg:sticky lg:top-24">
             <DealSummary breakdown={deal.breakdown} />
+            <PaymentEstimator amountDue={deal.breakdown.amount_due} />
           </aside>
         </div>
       )}

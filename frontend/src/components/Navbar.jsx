@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Car, Gauge, Settings, Store, Warehouse } from "lucide-react";
+import { Car, Gauge, Settings, Store, Warehouse, BellRing } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useDealerAlerts } from "@/lib/useDealerAlerts";
 
 const CONSUMER_LINKS = [
   { to: "/", label: "Shop", icon: Car, testid: "nav-shop" },
@@ -17,6 +18,8 @@ export default function Navbar() {
   const navigate = useNavigate();
   const isDealer = pathname.startsWith("/dealer");
   const links = isDealer ? DEALER_LINKS : CONSUMER_LINKS;
+  // Bell only: the dashboard owns the toasts so a deal is never announced twice.
+  const { alerts } = useDealerAlerts();
 
   return (
     <header className="sticky top-0 z-40 h-16 border-b border-[#233044] bg-[#0B0F17]/90 backdrop-blur-md">
@@ -44,7 +47,36 @@ export default function Navbar() {
           ))}
         </nav>
 
-        <div className="ml-auto flex items-center rounded-xl border border-[#233044] bg-[#111827] p-1">
+        {isDealer && (
+          <Link
+            to="/dealer"
+            data-testid="dealer-alert-bell"
+            aria-label={`${alerts.length} deals need a human`}
+            className={cn(
+              "relative ml-auto mr-1 grid size-9 place-items-center rounded-lg border transition-colors duration-150",
+              alerts.length
+                ? "border-amber-500/40 bg-amber-500/10 text-amber-300"
+                : "border-[#233044] bg-[#111827] text-slate-500 hover:text-white",
+            )}
+          >
+            <BellRing className={cn("size-4", alerts.length && "animate-pulse")} />
+            {alerts.length > 0 && (
+              <span
+                className="dd-num absolute -right-1.5 -top-1.5 grid min-w-5 place-items-center rounded-full bg-[#FF5722] px-1 text-[10px] font-semibold text-white"
+                data-testid="dealer-alert-count"
+              >
+                {alerts.length}
+              </span>
+            )}
+          </Link>
+        )}
+
+        <div
+          className={cn(
+            "flex items-center rounded-xl border border-[#233044] bg-[#111827] p-1",
+            !isDealer && "ml-auto",
+          )}
+        >
           <button
             type="button"
             data-testid="role-switcher-consumer"
