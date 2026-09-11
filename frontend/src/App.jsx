@@ -9,6 +9,7 @@ import Compare from "@/pages/Compare";
 import DealerDashboard from "@/pages/DealerDashboard";
 import DealerDeal from "@/pages/DealerDeal";
 import DealerSettings from "@/pages/DealerSettings";
+import MyDeals from "@/pages/MyDeals";
 
 // One <Route> per page in src/pages; BrowserRouter already wraps this in main.jsx.
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
         <Route path="/deal/:dealId" element={<BuildDeal />} />
         <Route path="/negotiate/:dealId" element={<Negotiate />} />
         <Route path="/garage" element={<Garage />} />
+        <Route path="/deals" element={<MyDeals />} />
         <Route path="/compare" element={<Compare />} />
         <Route path="/dealer" element={<DealerDashboard />} />
         <Route path="/dealer/deals/:dealId" element={<DealerDeal />} />

@@ -5,6 +5,7 @@ import { useDealerAlerts } from "@/lib/useDealerAlerts";
 
 const CONSUMER_LINKS = [
   { to: "/", label: "Shop", icon: Car, testid: "nav-shop" },
+  { to: "/deals", label: "My Deals", icon: Gauge, testid: "nav-my-deals" },
   { to: "/garage", label: "My Garage", icon: Warehouse, testid: "nav-garage" },
 ];
 
