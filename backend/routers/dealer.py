@@ -5,6 +5,7 @@ from lib.pricing import effective_rules, negotiate
 from models.schemas import (
     DealerRules,
     DealerRulesInput,
+    ScopedDealerRule,
     SimulationInput,
     SimulationResponse,
     VinOverride,
@@ -52,29 +53,103 @@ async def delete_override(vin: str):
         raise HTTPException(status_code=404, detail="override not found")
     return {"deleted": vin}
 
+@router.get("/scoped-rules", response_model=list[ScopedDealerRule])
+async def list_scoped_rules():
+    docs = await db.scoped_rules.find({}, {"_id": 0}).to_list(200)
+    return [ScopedDealerRule(**d) for d in docs]
+
+
+@router.put("/scoped-rules/{rule_id}", response_model=ScopedDealerRule)
+async def upsert_scoped_rule(rule_id: str, payload: ScopedDealerRule):
+    data = payload.model_dump()
+    data["id"] = rule_id
+
+    await db.scoped_rules.update_one(
+        {"id": rule_id},
+        {"$set": data},
+        upsert=True,
+    )
+
+    return ScopedDealerRule(**data)
+
+
+@router.delete("/scoped-rules/{rule_id}")
+async def delete_scoped_rule(rule_id: str):
+    res = await db.scoped_rules.delete_one({"id": rule_id})
+
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="scoped rule not found")
+
+    return {"deleted": rule_id}
+
 
 @router.get("/effective-rules/{vin}")
 async def get_effective(vin: str):
-    vehicle = await db.vehicles.find_one({"vin": vin}, {"_id": 0})
+    vehicle = await db.vehicles.find_one(
+        {"vin": vin},
+        {"_id": 0},
+    )
     if not vehicle:
         raise HTTPException(status_code=404, detail="vehicle not found")
-    dealer = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0}) or {}
-    override = await db.vin_overrides.find_one({"vin": vin}, {"_id": 0})
-    return effective_rules(vehicle, dealer, override)
+
+    dealer = await db.dealer_rules.find_one(
+        {"id": "dealership"},
+        {"_id": 0},
+    ) or {}
+
+    scoped_rules = await db.scoped_rules.find(
+        {},
+        {"_id": 0},
+    ).to_list(200)
+
+    override = await db.vin_overrides.find_one(
+        {"vin": vin},
+        {"_id": 0},
+    )
+
+    return effective_rules(
+        vehicle,
+        dealer,
+        override,
+        scoped_rules,
+    )
 
 
 @router.post("/simulate", response_model=SimulationResponse)
 async def simulate_negotiation(payload: SimulationInput):
-    vehicle = await db.vehicles.find_one({"vin": payload.vin}, {"_id": 0})
+    vehicle = await db.vehicles.find_one(
+        {"vin": payload.vin},
+        {"_id": 0},
+    )
     if not vehicle:
         raise HTTPException(status_code=404, detail="vehicle not found")
 
-    dealer = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0}) or {}
-    override = await db.vin_overrides.find_one({"vin": payload.vin}, {"_id": 0})
+    dealer = await db.dealer_rules.find_one(
+        {"id": "dealership"},
+        {"_id": 0},
+    ) or {}
 
-    rules = effective_rules(vehicle, dealer, override)
+    scoped_rules = await db.scoped_rules.find(
+        {},
+        {"_id": 0},
+    ).to_list(200)
 
-    decision, counter_price, message, status = negotiate(payload.offer, rules)
+    override = await db.vin_overrides.find_one(
+        {"vin": payload.vin},
+        {"_id": 0},
+    )
+
+    rules = effective_rules(
+        vehicle,
+        dealer,
+        override,
+        scoped_rules,
+    )
+
+    decision, counter_price, message, status = negotiate(
+        payload.offer,
+        rules,
+    )
 
     advertised = float(vehicle["price"])
     offer = float(payload.offer)

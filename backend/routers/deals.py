@@ -28,9 +28,27 @@ async def _load(deal_id: str) -> dict:
 
 
 async def _rules_for(vehicle: dict) -> dict:
-    dealer = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0}) or {}
-    override = await db.vin_overrides.find_one({"vin": vehicle["vin"]}, {"_id": 0})
-    return effective_rules(vehicle, dealer, override)
+    dealer = await db.dealer_rules.find_one(
+        {"id": "dealership"},
+        {"_id": 0},
+    ) or {}
+
+    scoped_rules = await db.scoped_rules.find(
+        {},
+        {"_id": 0},
+    ).to_list(200)
+
+    override = await db.vin_overrides.find_one(
+        {"vin": vehicle["vin"]},
+        {"_id": 0},
+    )
+
+    return effective_rules(
+        vehicle,
+        dealer,
+        override,
+        scoped_rules,
+    )
 
 
 def _msg(sender: str, text: str, amount=None) -> dict:

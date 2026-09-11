@@ -16,6 +16,7 @@ class Vehicle(BaseModel):
     make: str
     model: str
     trim: str
+    condition: Literal["new", "used"] = "used"
     price: float
     msrp: float
     incentives: float = 0.0
@@ -29,11 +30,9 @@ class Vehicle(BaseModel):
     dealer_name: str = ""
     dealer_address: str = ""
 
-
 class VehicleMatch(Vehicle):
     match_pct: int = 90
     unmet: list[str] = []
-
 
 class SearchResponse(BaseModel):
     query: str
@@ -44,7 +43,6 @@ class SearchResponse(BaseModel):
     exact_matches: list[VehicleMatch] = []
     alternatives: list[VehicleMatch] = []
     results: list[VehicleMatch]
-
 
 class Trade(BaseModel):
     vin: str = ""
@@ -59,7 +57,6 @@ class Trade(BaseModel):
     estimated_high: float = 0.0
     estimated_value: float = 0.0
 
-
 class Message(BaseModel):
     id: str = Field(default_factory=new_id)
     sender: Literal["customer", "dealer", "system"]
@@ -67,13 +64,11 @@ class Message(BaseModel):
     amount: Optional[float] = None
     created_at: datetime
 
-
 class Appointment(BaseModel):
     date: str
     time: str
     type: str = "Test Drive & Delivery"
     location: str = ""
-
 
 class Deal(BaseModel):
     id: str = Field(default_factory=new_id)
@@ -92,11 +87,9 @@ class Deal(BaseModel):
     appointment: Optional[Appointment] = None
     created_at: datetime
 
-
 class DealCreate(BaseModel):
     vehicle_id: str
     customer_name: str = "Alex Rivera"
-
 
 class TradeInput(BaseModel):
     vin: str = ""
@@ -108,26 +101,21 @@ class TradeInput(BaseModel):
     condition: str = "clean"
     photos: list[str] = []
 
-
 class OfferInput(BaseModel):
     amount: float
     down_payment: float = 0.0
 
-
 class TermsInput(BaseModel):
     down_payment: float = 0.0
-
 
 class DealerActionInput(BaseModel):
     action: Literal["accept", "counter", "decline", "takeover"]
     amount: Optional[float] = None
     note: str = ""
 
-
 class SimulationInput(BaseModel):
     vin: str
     offer: float
-
 
 class SimulationResponse(BaseModel):
     vin: str
@@ -142,27 +130,22 @@ class SimulationResponse(BaseModel):
     rule_source: str
     effective_rules: dict[str, Any]
 
-
 class AppointmentInput(BaseModel):
     date: str
     time: str
     type: str = "Test Drive & Delivery"
 
-
 class CoachInput(BaseModel):
     amount: float
-
 
 class CoachResponse(BaseModel):
     band: Literal["strong", "possible", "unlikely"]
     hint: str
     amount: float
 
-
 class Quote(BaseModel):
     vehicle: Vehicle
     breakdown: dict[str, Any]
-
 
 class DealerRules(BaseModel):
     id: str = "dealership"
@@ -172,13 +155,25 @@ class DealerRules(BaseModel):
     hard_floor: Optional[float] = None
     max_deviation_pct: float = 18.0
 
-
 class DealerRulesInput(BaseModel):
     ai_discount_authority: float
     manager_threshold: float
     hard_floor: Optional[float] = None
     max_deviation_pct: float
 
+class ScopedDealerRule(BaseModel):
+    id: str
+    level: Literal["condition", "model", "trim"]
+
+    condition: Optional[Literal["new", "used"]] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    trim: Optional[str] = None
+
+    ai_discount_authority: Optional[float] = None
+    manager_threshold: Optional[float] = None
+    hard_floor: Optional[float] = None
+    max_deviation_pct: Optional[float] = None
 
 class VinOverride(BaseModel):
     vin: str
@@ -187,7 +182,6 @@ class VinOverride(BaseModel):
     manager_threshold: Optional[float] = None
     hard_floor: Optional[float] = None
     max_deviation_pct: Optional[float] = None
-
 
 class GarageVehicle(BaseModel):
     id: str = Field(default_factory=new_id)
@@ -208,7 +202,6 @@ class GarageVehicle(BaseModel):
     source: str = "purchase"
     added_at: datetime
 
-
 class GarageCreate(BaseModel):
     vin: str = ""
     year: int
@@ -219,10 +212,8 @@ class GarageCreate(BaseModel):
     payoff: float = 0.0
     condition: str = "clean"
 
-
 class PayoffInput(BaseModel):
     payoff: float
-
 
 class MileageInput(BaseModel):
     mileage: int

@@ -70,31 +70,136 @@ def compute_deal(vehicle: dict, selling_price: float, trade: dict | None, down_p
     }
 
 
-def effective_rules(vehicle: dict, dealer_rules: dict, vin_override: dict | None):
-    advertised = float(vehicle["price"])
-    r = {
-        "advertised_price": advertised,
-        "ai_discount_authority": float(dealer_rules.get("ai_discount_authority", DEFAULT_RULES["ai_discount_authority"])),
-        "manager_threshold": float(dealer_rules.get("manager_threshold", DEFAULT_RULES["manager_threshold"])),
-        "hard_floor": float(dealer_rules.get("hard_floor", advertised - DEFAULT_RULES["hard_floor_offset"])),
-        "max_deviation_pct": float(dealer_rules.get("max_deviation_pct", DEFAULT_RULES["max_deviation_pct"])),
-        "source": "dealership_default",
-    }
-    if vin_override:
-        for k in ("ai_discount_authority", "manager_threshold", "hard_floor", "max_deviation_pct"):
-            if vin_override.get(k) is not None:
-                r[k] = float(vin_override[k])
-        r["source"] = "vin_override"
+def _apply_rule_values(rules: dict, override: dict | None):
+    """Apply only explicitly configured rule values, preserving inheritance."""
+    if not override:
+        return
 
-    # A single dealership-wide dollar floor can exceed the advertised price of a cheaper unit.
-    # Left alone, the desk would "counter" ABOVE its own asking price. Fall back to the
-    # percentage-style default offset for that vehicle instead.
-    if r["hard_floor"] >= advertised:
-        r["hard_floor"] = round2(max(0.0, advertised - DEFAULT_RULES["hard_floor_offset"]))
-    # Authority can never reach below the floor.
-    r["ai_discount_authority"] = min(r["ai_discount_authority"], max(0.0, advertised - r["hard_floor"]))
-    r["manager_threshold"] = min(r["manager_threshold"], max(0.0, advertised - r["hard_floor"]))
-    return r
+    for key in (
+        "ai_discount_authority",
+        "manager_threshold",
+        "hard_floor",
+        "max_deviation_pct",
+    ):
+        if override.get(key) is not None:
+            rules[key] = float(override[key])
+
+
+def _matches(value, expected):
+    """Case-insensitive exact match for rule selectors."""
+    if expected is None:
+        return True
+    return str(value or "").strip().lower() == str(expected).strip().lower()
+
+
+def effective_rules(
+    vehicle: dict,
+    dealer_rules: dict,
+    vin_override: dict | None,
+    scoped_rules: list[dict] | None = None,
+):
+    """
+    Resolve negotiation rules from broadest to most specific:
+
+    dealership -> condition -> model -> trim -> VIN
+
+    Each level only overrides values explicitly configured at that level.
+    """
+    advertised = float(vehicle["price"])
+
+    dealer_floor = dealer_rules.get("hard_floor")
+    if dealer_floor is None:
+        dealer_floor = advertised - DEFAULT_RULES["hard_floor_offset"]
+
+    rules = {
+        "advertised_price": advertised,
+        "ai_discount_authority": float(
+            dealer_rules.get(
+                "ai_discount_authority",
+                DEFAULT_RULES["ai_discount_authority"],
+            )
+        ),
+        "manager_threshold": float(
+            dealer_rules.get(
+                "manager_threshold",
+                DEFAULT_RULES["manager_threshold"],
+            )
+        ),
+        "hard_floor": float(dealer_floor),
+        "max_deviation_pct": float(
+            dealer_rules.get(
+                "max_deviation_pct",
+                DEFAULT_RULES["max_deviation_pct"],
+            )
+        ),
+        "source": "dealership_default",
+        "applied_sources": ["dealership_default"],
+    }
+
+    vehicle_condition = vehicle.get("condition", "used")
+    vehicle_make = vehicle.get("make", "")
+    vehicle_model = vehicle.get("model", "")
+    vehicle_trim = vehicle.get("trim", "")
+
+    scoped_rules = scoped_rules or []
+
+    # Broadest scoped rule first: New / Used.
+    for rule in scoped_rules:
+        if (
+            rule.get("level") == "condition"
+            and _matches(vehicle_condition, rule.get("condition"))
+        ):
+            _apply_rule_values(rules, rule)
+            rules["source"] = "condition_rule"
+            rules["applied_sources"].append(rule.get("id", "condition_rule"))
+
+    # Model rules are brand-aware so "1500" or similar names do not collide.
+    for rule in scoped_rules:
+        if (
+            rule.get("level") == "model"
+            and _matches(vehicle_make, rule.get("make"))
+            and _matches(vehicle_model, rule.get("model"))
+        ):
+            _apply_rule_values(rules, rule)
+            rules["source"] = "model_rule"
+            rules["applied_sources"].append(rule.get("id", "model_rule"))
+
+    # Trim rules inherit the condition + model rules above them.
+    for rule in scoped_rules:
+        if (
+            rule.get("level") == "trim"
+            and _matches(vehicle_make, rule.get("make"))
+            and _matches(vehicle_model, rule.get("model"))
+            and _matches(vehicle_trim, rule.get("trim"))
+        ):
+            _apply_rule_values(rules, rule)
+            rules["source"] = "trim_rule"
+            rules["applied_sources"].append(rule.get("id", "trim_rule"))
+
+    # A VIN override always has final authority.
+    if vin_override:
+        _apply_rule_values(rules, vin_override)
+        rules["source"] = "vin_override"
+        rules["applied_sources"].append("vin_override")
+
+    # A dollar floor must never be at or above this vehicle's advertised price.
+    if rules["hard_floor"] >= advertised:
+        rules["hard_floor"] = round2(
+            max(0.0, advertised - DEFAULT_RULES["hard_floor_offset"])
+        )
+
+    # Neither automatic authority nor the manager zone may extend below the floor.
+    available_discount = max(0.0, advertised - rules["hard_floor"])
+    rules["ai_discount_authority"] = min(
+        rules["ai_discount_authority"],
+        available_discount,
+    )
+    rules["manager_threshold"] = min(
+        rules["manager_threshold"],
+        available_discount,
+    )
+
+    return rules
 
 
 def coach_band(offer: float, rules: dict):
