@@ -32,6 +32,7 @@ class Vehicle(BaseModel):
 
 class VehicleMatch(Vehicle):
     match_pct: int = 90
+    unmet: list[str] = []
 
 
 class SearchResponse(BaseModel):
@@ -183,8 +184,25 @@ class GarageVehicle(BaseModel):
     equity: float
     base_value: float = 0.0
     base_mileage: int = 0
+    valued_at: Optional[datetime] = None
+    value_source: str = "DealDrive sample valuation model (demo)"
     source: str = "purchase"
     added_at: datetime
+
+
+class GarageCreate(BaseModel):
+    vin: str = ""
+    year: int
+    make: str
+    model: str
+    trim: str = ""
+    mileage: int
+    payoff: float = 0.0
+    condition: str = "clean"
+
+
+class PayoffInput(BaseModel):
+    payoff: float
 
 
 class MileageInput(BaseModel):

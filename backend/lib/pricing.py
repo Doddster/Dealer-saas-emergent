@@ -36,15 +36,21 @@ def trade_estimate(year: int, mileage: int, condition: str):
 
 
 def compute_deal(vehicle: dict, selling_price: float, trade: dict | None, down_payment: float = 0.0):
-    """Full OTD breakdown. Trade equity = trade value - payoff."""
+    """Full breakdown. Three DISTINCT totals, never conflated:
+
+      estimated_otd          — price - incentives + fees + tax (what the vehicle costs)
+      cash_due_at_delivery   — the customer's down payment (cash out of pocket)
+      amount_financed        — OTD - trade equity - down payment (what a lender would carry)
+    """
     incentives = float(vehicle.get("incentives", 0.0))
     taxable = max(0.0, selling_price - incentives)
     tax = taxable * TAX_RATE
     trade_value = float(trade.get("estimated_value", 0.0)) if trade else 0.0
     payoff = float(trade.get("payoff", 0.0)) if trade else 0.0
     equity = trade_value - payoff
+    down = float(down_payment or 0.0)
     otd = selling_price - incentives + DOC_FEE + TITLE_FEE + tax
-    amount_due = otd - equity - float(down_payment or 0.0)
+    financed = otd - equity - down
     return {
         "selling_price": round2(selling_price),
         "incentives": round2(incentives),
@@ -55,9 +61,12 @@ def compute_deal(vehicle: dict, selling_price: float, trade: dict | None, down_p
         "trade_value": round2(trade_value),
         "trade_payoff": round2(payoff),
         "trade_equity": round2(equity),
-        "down_payment": round2(down_payment or 0.0),
+        "down_payment": round2(down),
         "estimated_otd": round2(otd),
-        "amount_due": round2(amount_due),
+        "cash_due_at_delivery": round2(down),
+        "amount_financed": round2(financed),
+        # kept as an alias so older callers keep working; equals amount_financed
+        "amount_due": round2(financed),
     }
 
 
