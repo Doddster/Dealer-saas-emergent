@@ -10,7 +10,6 @@ import json
 import logging
 import os
 import re
-import uuid
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -19,9 +18,8 @@ load_dotenv(Path(__file__).parent.parent / ".env")
 
 logger = logging.getLogger(__name__)
 
-MODEL = "gpt-5.2"
-PROVIDER = "openai"
-TIMEOUT_S = 20.0
+MODEL = os.environ.get("OPENAI_MODEL", "gpt-5.6-luna")
+TIMEOUT_S = float(os.environ.get("LLM_TIMEOUT_S", 20.0))
 
 FEATURE_VOCAB = [
     "crew cab", "supercrew", "crewmax", "sunroof", "panoramic roof", "heated seats",
@@ -31,7 +29,7 @@ FEATURE_VOCAB = [
 
 
 def _key():
-    return os.environ.get("EMERGENT_LLM_KEY")
+    return os.environ.get("OPENAI_API_KEY")
 
 
 def _parse_json(text: str):
@@ -54,27 +52,37 @@ def _parse_json(text: str):
 async def _ask(system_message: str, prompt: str):
     """One-shot structured call. Returns parsed JSON dict or None."""
     key = _key()
+
     if not key:
-        logger.warning("llm: EMERGENT_LLM_KEY missing — using rules engine")
+        logger.warning("llm: OPENAI_API_KEY missing — using rules engine")
         return None
+
     try:
-        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        from openai import AsyncOpenAI
 
-        chat = LlmChat(
+        client = AsyncOpenAI(
             api_key=key,
-            session_id=f"dealdrive-{uuid.uuid4()}",
-            system_message=system_message,
-        ).with_model(PROVIDER, MODEL)
+            timeout=TIMEOUT_S,
+        )
 
-        reply = await asyncio.wait_for(chat.send_message(UserMessage(text=prompt)), timeout=TIMEOUT_S)
-        return _parse_json(reply if isinstance(reply, str) else str(reply))
+        response = await asyncio.wait_for(
+            client.responses.create(
+                model=MODEL,
+                instructions=system_message,
+                input=prompt,
+            ),
+            timeout=TIMEOUT_S,
+        )
+
+        return _parse_json(response.output_text)
+
     except asyncio.TimeoutError:
         logger.warning("llm: timed out after %ss — using rules engine", TIMEOUT_S)
         return None
-    except Exception as exc:  # never break the deal flow on an LLM error
+
+    except Exception as exc:
         logger.warning("llm: call failed (%s) — using rules engine", exc)
         return None
-
 
 # ---------------------------------------------------------------- search interpretation
 
