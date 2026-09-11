@@ -1,8 +1,14 @@
 from fastapi import APIRouter, HTTPException
 
 from lib.db import db
-from lib.pricing import effective_rules
-from models.schemas import DealerRules, DealerRulesInput, VinOverride
+from lib.pricing import effective_rules, negotiate
+from models.schemas import (
+    DealerRules,
+    DealerRulesInput,
+    SimulationInput,
+    SimulationResponse,
+    VinOverride,
+)
 
 router = APIRouter(prefix="/dealer", tags=["dealer"])
 
@@ -18,7 +24,9 @@ async def get_rules():
 
 @router.put("/rules", response_model=DealerRules)
 async def update_rules(payload: DealerRulesInput):
-    await db.dealer_rules.update_one({"id": "dealership"}, {"$set": payload.model_dump()}, upsert=True)
+    await db.dealer_rules.update_one(
+        {"id": "dealership"}, {"$set": payload.model_dump()}, upsert=True
+    )
     doc = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0})
     return DealerRules(**doc)
 
@@ -53,3 +61,34 @@ async def get_effective(vin: str):
     dealer = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0}) or {}
     override = await db.vin_overrides.find_one({"vin": vin}, {"_id": 0})
     return effective_rules(vehicle, dealer, override)
+
+
+@router.post("/simulate", response_model=SimulationResponse)
+async def simulate_negotiation(payload: SimulationInput):
+    vehicle = await db.vehicles.find_one({"vin": payload.vin}, {"_id": 0})
+    if not vehicle:
+        raise HTTPException(status_code=404, detail="vehicle not found")
+
+    dealer = await db.dealer_rules.find_one({"id": "dealership"}, {"_id": 0}) or {}
+    override = await db.vin_overrides.find_one({"vin": payload.vin}, {"_id": 0})
+
+    rules = effective_rules(vehicle, dealer, override)
+
+    decision, counter_price, message, status = negotiate(payload.offer, rules)
+
+    advertised = float(vehicle["price"])
+    offer = float(payload.offer)
+
+    return SimulationResponse(
+        vin=payload.vin,
+        vehicle_label=f"{vehicle['year']} {vehicle['make']} {vehicle['model']} {vehicle['trim']}",
+        advertised_price=advertised,
+        offer=offer,
+        discount=round(advertised - offer, 2),
+        decision=decision,
+        status=status,
+        counter_price=counter_price,
+        message=message,
+        rule_source=rules["source"],
+        effective_rules=rules,
+    )

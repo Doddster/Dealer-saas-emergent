@@ -12,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { apiDelete, apiGet, apiPut } from "@/lib/api";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/api";
 import { money } from "@/lib/format";
 
 const FIELDS = [
@@ -42,6 +42,9 @@ export default function DealerSettings() {
 
   const [ovVin, setOvVin] = useState("");
   const [ovForm, setOvForm] = useState({ ai_discount_authority: "", manager_threshold: "", hard_floor: "", max_deviation_pct: "" });
+  const [simVin, setSimVin] = useState("");
+  const [simOffer, setSimOffer] = useState("");
+  const [simResult, setSimResult] = useState(null);
 
   const saveRules = useMutation({
     mutationFn: () =>
@@ -91,6 +94,21 @@ export default function DealerSettings() {
     const v = vehicles.find((x) => x.vin === vin);
     return v ? `${v.year} ${v.make} ${v.model} ${v.trim}` : vin;
   };
+ 
+ const runSimulation = useMutation({
+  mutationFn: () =>
+    apiPost("/dealer/simulate", {
+      vin: simVin,
+      offer: Number(simOffer),
+    }),
+  onSuccess: (data) => {
+    setSimResult(data);
+  },
+  onError: () => {
+    setSimResult(null);
+    toast.error("Could not run simulation.");
+  },
+});
 
   return (
     <Shell>
@@ -176,6 +194,154 @@ export default function DealerSettings() {
           ))}
         </div>
       </section>
+      <section
+  className="mt-8 rounded-2xl border border-[#233044] bg-[#111827] p-6"
+  data-testid="simulation-mode"
+>
+  <h2 className="font-heading text-lg font-semibold">Simulation Mode</h2>
+
+  <p className="mt-1 text-sm text-slate-400">
+    Test exactly how DealDrive would respond to a customer offer without creating or changing a real deal.
+  </p>
+
+  <div className="mt-5 grid gap-4 md:grid-cols-3">
+    <div className="md:col-span-2">
+      <Label className="mb-1.5 block text-xs">Vehicle</Label>
+
+      <Select
+        value={simVin}
+        onValueChange={(value) => {
+          setSimVin(value);
+          setSimResult(null);
+        }}
+      >
+        <SelectTrigger className="w-full" data-testid="simulation-vin-select">
+          <SelectValue>{(v) => (v ? vinLabel(v) : "Select a vehicle")}</SelectValue>
+        </SelectTrigger>
+
+        <SelectContent>
+          {vehicles.map((v) => (
+            <SelectItem key={v.vin} value={v.vin}>
+              {v.year} {v.make} {v.model} {v.trim} — {money(v.price)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+
+    <div>
+      <Label className="mb-1.5 block text-xs">Customer Offer ($)</Label>
+
+      <Input
+        value={simOffer}
+        onChange={(e) => {
+          setSimOffer(e.target.value);
+          setSimResult(null);
+        }}
+        placeholder="55000"
+        data-testid="simulation-offer-input"
+      />
+    </div>
+  </div>
+
+  <Button
+    className="mt-5"
+    variant="outline"
+    disabled={!simVin || !simOffer || runSimulation.isPending}
+    onClick={() => runSimulation.mutate()}
+    data-testid="run-simulation-btn"
+  >
+    {runSimulation.isPending ? "Running..." : "Run Simulation"}
+  </Button>
+
+  {simResult && (
+    <div className="mt-6 rounded-xl border border-[#233044] bg-[#0D1524] p-5">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-slate-500">
+            Simulated result
+          </p>
+
+          <p className="mt-1 font-heading text-xl font-semibold">
+            {simResult.decision === "accepted"
+              ? "Accepted"
+              : simResult.decision === "countered"
+                ? "Countered"
+                : "Manager Review"}
+          </p>
+
+          <p className="mt-1 text-sm text-slate-400">
+            {simResult.vehicle_label}
+          </p>
+        </div>
+
+        <div className="text-right">
+          <p className="text-xs text-slate-500">Rule source</p>
+          <p className="text-sm font-medium">
+            {simResult.rule_source === "vin_override"
+              ? "VIN override"
+              : "Dealership default"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <p className="text-xs text-slate-500">Advertised</p>
+          <p className="dd-num font-medium">
+            {money(simResult.advertised_price)}
+          </p>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500">Customer offer</p>
+          <p className="dd-num font-medium">{money(simResult.offer)}</p>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500">Discount requested</p>
+          <p className="dd-num font-medium">{money(simResult.discount)}</p>
+        </div>
+
+        <div>
+          <p className="text-xs text-slate-500">DealDrive counter</p>
+          <p className="dd-num font-medium">
+            {simResult.counter_price != null
+              ? money(simResult.counter_price)
+              : "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-5 rounded-lg border border-[#233044] p-4">
+        <p className="text-xs text-slate-500">Customer-facing response</p>
+        <p className="mt-2 text-sm text-slate-200">{simResult.message}</p>
+      </div>
+
+      <div className="mt-5 grid gap-3 text-xs sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <span className="text-slate-500">AI authority: </span>
+          <span>{money(simResult.effective_rules.ai_discount_authority)}</span>
+        </div>
+
+        <div>
+          <span className="text-slate-500">Manager threshold: </span>
+          <span>{money(simResult.effective_rules.manager_threshold)}</span>
+        </div>
+
+        <div>
+          <span className="text-slate-500">Hard floor: </span>
+          <span>{money(simResult.effective_rules.hard_floor)}</span>
+        </div>
+
+        <div>
+          <span className="text-slate-500">Max deviation: </span>
+          <span>{simResult.effective_rules.max_deviation_pct}%</span>
+        </div>
+      </div>
+    </div>
+  )}
+</section>
     </Shell>
   );
 }

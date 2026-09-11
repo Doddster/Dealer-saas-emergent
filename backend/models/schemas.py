@@ -124,6 +124,25 @@ class DealerActionInput(BaseModel):
     note: str = ""
 
 
+class SimulationInput(BaseModel):
+    vin: str
+    offer: float
+
+
+class SimulationResponse(BaseModel):
+    vin: str
+    vehicle_label: str
+    advertised_price: float
+    offer: float
+    discount: float
+    decision: Literal["accepted", "countered", "escalated"]
+    status: str
+    counter_price: Optional[float] = None
+    message: str
+    rule_source: str
+    effective_rules: dict[str, Any]
+
+
 class AppointmentInput(BaseModel):
     date: str
     time: str
